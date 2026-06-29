@@ -1,75 +1,68 @@
-const { Mistral } = require('@mistralai/mistralai');
-const env = require('../config/env');
-const ApiError = require('../utils/ApiError');
+// backend/src/services/mistralService.js
 
-const client = env.mistralApiKey ? new Mistral({ apiKey: env.mistralApiKey }) : null;
-
-const analyzeResume = async (resumeText) => {
-  if (!client) {
-    throw ApiError.internal('Mistral client configuration missing or invalid API key.');
-  }
-
+/**
+ * Executes a resume analysis using the Mistral AI SDK via dynamic imports
+ * to bypass CommonJS/ES Module compatibility limitations on serverless architectures.
+ * 
+ * @param {string} resumeText - The extracted text data from the resume PDF.
+ * @param {string} jobDescription - The target position description to compare against.
+ * @returns {Promise<Object>} The parsed JSON metrics from the AI analysis.
+ */
+const analyzeResumeWithMistral = async (resumeText, jobDescription) => {
   try {
-    // UPDATED PROMPT: Forces Mistral to output schema structures that match your MongoDB Models
-   // UPDATED PROMPT: Changes 'message' to 'title' to satisfy your Mongoose Analysis Schema constraints
-    const prompt = `
-      You are an expert ATS (Applicant Tracking System) optimization algorithm and professional resume auditor.
-      Analyze the provided resume text thoroughly and extract critical operational insights.
-      
-      You MUST return your complete analytical output strictly as a valid, parsable JSON object. 
-      Do not include markdown tags like \`\`\`json or trailing conversational explanations.
-      
-      The structure must follow this format exactly:
-      {
-        "atsScore": 85, 
-        "summary": "Deep professional summary reflecting matching strengths...",
-        "scoreBreakdown": {
-          "impact": 80,
-          "brevity": 85,
-          "style": 90
-        },
-        "strengths": [
-          { "title": "Keyword Optimization", "description": "Excellent usage of industry keywords." }
-        ],
-        "issues": [
-          { "type": "warning", "title": "Missing structural metric data.", "section": "experience" }
-        ],
-        "bulletRewrites": [
-          { "original": "Worked on a web application.", "rewritten": "Architected responsive MERN stack features, increasing client engagement by 20%." }
-        ],
-        "keywordsPresent": ["React", "Node.js"],
-        "keywordsMissing": ["Docker", "AWS"]
-      }
+    // 1. Resolve ESM package dynamically at runtime to handle Netlify's bundler
+    const { Mistral } = await import('@mistralai/mistralai');
 
-      Resume Document Content to analyze:
+    // 2. Initialize the client using configuration from global process environment
+    const client = new Mistral({
+      apiKey: process.env.MISTRAL_API_KEY || ''
+    });
+
+    // 3. Define a structured system prompt to ensure clean JSON output
+    const systemPrompt = `
+      You are an expert Applicant Tracking System (ATS) optimization engine and senior technical recruiter. 
+      Analyze the provided resume text against the target job description.
+      You must respond with a valid, clean JSON object containing exactly the following keys:
+      {
+        "score": (number between 0 and 100),
+        "summary": "Short professional match summary overview string",
+        "matchedKeywords": ["keyword1", "keyword2"],
+        "missingKeywords": ["keyword1", "keyword2"],
+        "recommendations": ["improvement1", "improvement2"]
+      }
+      Do not include markdown tags like \`\`\`json or trailing commentary outside the JSON body.
+    `;
+
+    const userPrompt = `
+      JOB DESCRIPTION:
+      ${jobDescription}
+
+      RESUME TEXT:
       ${resumeText}
     `;
 
+    // 4. Send the payload to the latest Mistral completion endpoint
     const response = await client.chat.complete({
-      model: env.mistralModel,
-      messages: [{ role: 'user', content: prompt }],
-      responseFormat: { type: 'json_object' } 
+      model: process.env.MISTRAL_MODEL || 'mistral-large-latest',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      responseFormat: { type: 'json_object' } // Enforces strict JSON return type
     });
 
-    if (!response.choices || response.choices.length === 0) {
-      throw new Error('Empty response frame received from Mistral API paths.');
-    }
-
-    let rawContent = response.choices[0].message.content;
+    // 5. Safely pull and format the raw content block
+    const rawContent = response.choices[0].message.content;
     
-    if (Array.isArray(rawContent)) {
-      rawContent = rawContent.map(block => block.text || '').join('');
-    }
-
-    if (!rawContent || typeof rawContent !== 'string') {
-      throw new Error('Mistral returned an unparsable or empty content body format.');
-    }
-    
-    return JSON.parse(rawContent.trim());
+    // Parse the JSON string into an object to feed smoothly to your MongoDB controller
+    return JSON.parse(rawContent);
 
   } catch (error) {
-    throw ApiError.internal(`Mistral analytics system failure: ${error.message}`);
+    console.error('Mistral Service Engine Processing Error:', error.message);
+    throw new Error(`Failed to complete AI processing: ${error.message}`);
   }
 };
 
-module.exports = { analyzeResume };
+module.exports = {
+  analyzeResumeWithMistral
+};
