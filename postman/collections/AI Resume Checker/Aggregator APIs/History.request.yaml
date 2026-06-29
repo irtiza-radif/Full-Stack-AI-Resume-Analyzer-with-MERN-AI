@@ -1,0 +1,8 @@
+$kind: http-request
+name: History
+method: GET
+url: "{{base_url}}/api/history"
+description: Returns the full analysis history log of all resume checks performed, with timestamps and scores.
+headers:
+  Authorization: Bearer {{token}}
+order: 4000

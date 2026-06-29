@@ -1,0 +1,8 @@
+$kind: http-request
+name: Dashboard
+method: GET
+url: "{{base_url}}/api/dashboard"
+description: Fetches aggregated dashboard data including resume count, analysis summary, and recent activity.
+headers:
+  Authorization: Bearer {{token}}
+order: 1000

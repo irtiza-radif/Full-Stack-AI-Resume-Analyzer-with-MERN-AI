@@ -1,0 +1,5 @@
+$kind: http-request
+name: Apply Rewrites
+url: ""
+method: POST
+order: 3520008828148132

@@ -1,0 +1,5 @@
+$kind: collection
+name: AI Resume Checker
+variables:
+  - key: baseUrl
+    value: 'http://localhost:5000'

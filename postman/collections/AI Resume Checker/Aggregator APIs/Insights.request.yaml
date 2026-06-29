@@ -1,0 +1,8 @@
+$kind: http-request
+name: Insights
+method: GET
+url: "{{base_url}}/api/insights"
+description: Returns AI-generated insights aggregated across all analyzed resumes, including skill trends and improvement suggestions.
+headers:
+  Authorization: Bearer {{token}}
+order: 2000

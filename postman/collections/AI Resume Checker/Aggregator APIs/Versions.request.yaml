@@ -1,0 +1,8 @@
+$kind: http-request
+name: Versions
+method: GET
+url: "{{base_url}}/api/versions"
+description: Retrieves all versions of uploaded resumes for a user, showing version history and comparison metadata.
+headers:
+  Authorization: Bearer {{token}}
+order: 3000

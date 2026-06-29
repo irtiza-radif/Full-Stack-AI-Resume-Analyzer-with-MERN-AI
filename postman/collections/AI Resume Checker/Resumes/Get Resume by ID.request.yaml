@@ -1,0 +1,9 @@
+$kind: http-request
+name: Get Resume by ID
+method: GET
+url: '{{baseUrl}}/api/resumes/:id'
+order: 4000
+pathVariables:
+  - key: id
+    value: ''
+    description: 'MongoDB ObjectId of the resume'

@@ -1,0 +1,15 @@
+$kind: http-request
+name: Upload Resume
+method: POST
+url: "{{baseUrl}}/api/resumes"
+order: 1000
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - postman-cloud:///1f16fafb-eb02-41d0-9df7-55cd75f0cb56
+      contentType: application/pdf
+      description: PDF resume file to upload
+      disabled: false

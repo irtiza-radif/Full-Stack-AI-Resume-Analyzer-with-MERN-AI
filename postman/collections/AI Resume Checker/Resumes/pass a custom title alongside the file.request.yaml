@@ -1,0 +1,16 @@
+$kind: http-request
+name: 'pass a custom title alongside the file'
+method: POST
+url: '{{baseUrl}}/api/resumes'
+order: 2000
+body:
+  type: formdata
+  content:
+    - key: file
+      type: file
+      src: ''
+      description: 'PDF resume file to upload'
+    - key: title
+      type: text
+      value: 'My Custom Resume Title'
+      description: 'Optional custom title for the resume'

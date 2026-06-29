@@ -1,0 +1,12 @@
+$kind: http-request
+name: Analyze Resume
+url: http://localhost:5000/api/resumes/6a3bb56d280ab68fdc499610/analyze
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"targetRole\": \"Senior Frontend Engineer\"\r
+
+    }"
+order: 3487767690478469

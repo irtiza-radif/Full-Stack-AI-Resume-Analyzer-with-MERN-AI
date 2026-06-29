@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get All Resumes
+method: GET
+url: '{{baseUrl}}/api/resumes'
+order: 3000
