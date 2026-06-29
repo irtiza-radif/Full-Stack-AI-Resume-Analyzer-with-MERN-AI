@@ -1,10 +1,5 @@
-const { Mistral } = require("@mistralai/mistralai");
 const { z } = require("zod");
-
 const env = require("../config/env");
-
-// Initialize the Mistral client using your new environment variables
-const client = env.mistralApiKey ? new Mistral({ apiKey: env.mistralApiKey }) : null;
 
 // Zod schema remains perfectly intact to protect database schema integrity
 const validator = z.object({
@@ -109,15 +104,20 @@ const EMPTY = {
  * Parses raw text into a clean structured resume payload using Mistral AI
  */
 async function parseResume(rawText) {
-  if (!client || !rawText?.trim()) return EMPTY;
+  if (!env.mistralApiKey || !rawText?.trim()) return EMPTY;
 
   const prompt = buildPrompt(rawText);
 
   // Keeps your exact 2-attempt fault tolerance matrix running smoothly
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
+      // Dynamically load the ESM package at runtime to satisfy Netlify's CommonJS compiler
+      const { Mistral } = await import("@mistralai/mistralai");
+      
+      const client = new Mistral({ apiKey: env.mistralApiKey });
+
       const response = await client.chat.complete({
-        model: env.mistralModel,
+        model: env.mistralModel || 'mistral-large-latest',
         messages: [{ role: "user", content: prompt }],
         // Instructs Mistral to strictly return a valid, parsable JSON string
         responseFormat: { type: "json_object" },
@@ -133,7 +133,6 @@ async function parseResume(rawText) {
 
       const parsed = JSON.parse(text);
       return validator.parse(parsed);
-
     } catch (err) {
       if (attempt === 2) {
         console.error("Mistral structured parse failed permanently:", err.message);
@@ -141,7 +140,6 @@ async function parseResume(rawText) {
       }
     }
   }
-
   return EMPTY;
 }
 
